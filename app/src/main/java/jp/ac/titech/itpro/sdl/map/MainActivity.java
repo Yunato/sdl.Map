@@ -3,13 +3,14 @@ package jp.ac.titech.itpro.sdl.map;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,6 +44,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private FusedLocationProviderClient locationClient;
     private LocationRequest request;
     private LocationCallback callback;
+    private LatLng currentLl;
+    private Boolean isFirst = true;
 
     private enum State {
         STOPPED,
@@ -74,8 +77,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationClient = LocationServices.getFusedLocationProviderClient(this);
 
         request = new LocationRequest();
-        request.setInterval(10000L);
-        request.setFastestInterval(5000L);
+        request.setInterval(1000L);
+        request.setFastestInterval(0L);
         request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
         callback = new LocationCallback() {
@@ -87,15 +90,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     return;
                 }
                 Location location = locationResult.getLastLocation();
-                LatLng ll = new LatLng(location.getLatitude(), location.getLongitude());
-                infoView.setText(getString(R.string.latlng_format, ll.latitude, ll.longitude));
+                currentLl = new LatLng(location.getLatitude(), location.getLongitude());
+                infoView.setText(getString(R.string.latlng_format, currentLl.latitude, currentLl.longitude));
                 if (map == null) {
                     Log.d(TAG, "onLocationResult: map == null");
                     return;
                 }
-                map.animateCamera(CameraUpdateFactory.newLatLng(ll));
+                if(isFirst){
+                    map.animateCamera(CameraUpdateFactory.newLatLng(currentLl));
+                    isFirst = false;
+                }
             }
         };
+
+        (findViewById(R.id.fab)).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    map.animateCamera(CameraUpdateFactory.newLatLng(currentLl));
+                }
+            }
+        );
     }
 
     @Override
